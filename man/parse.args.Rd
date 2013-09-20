@@ -1,0 +1,44 @@
+\name{parse.args}
+\alias{parse.args}
+\title{Function to collect arguments when running R from the command line}
+\usage{
+  parse.args(arg.list = NULL, coms = c("X"), def = 0,
+    verbose = TRUE)
+}
+\arguments{
+  \item{arg.list}{the result of a commandArgs() call, or
+  else NULL to initiate this call within the function}
+
+  \item{coms}{list of valid commands to look for, not case
+  sensitive}
+
+  \item{def}{list of default values for each parameter (in
+  same order)}
+
+  \item{verbose}{whether to print to the console which
+  assignments are made and warning messages}
+}
+\value{
+  returns dataframe showing the resulting values for each
+  'coms'
+}
+\description{
+  Allows parameter specification by A=..., B=... in the
+  command line e.g, R < myScript.R M=1 NAME=John X=10.5,
+  using commandArgs()
+}
+\examples{
+parse.args(c("M=1","NAME=John","X=10.5"),coms=c("M","X","NAME"))
+parse.args(c("N=1")) # invalid command entered, ignored with warning
+temp.fn <- "tempScript1234.R"
+# make a temporary R Script file to call using the command line
+# not run # writeLines(c("require(reader)","parse.args(coms=c('M','X','NAME'))"),con=temp.fn)
+bash.cmd <- "R --no-save < tempScript1234.R M=1 NAME=John X=10.5"
+# run above command in the terminal, or using 'system' below:
+# not run # arg <- system(bash.cmd)
+# not run # unlink(temp.fn) # delete temporary file
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

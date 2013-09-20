@@ -1,0 +1,38 @@
+\name{file.nrow}
+\alias{file.nrow}
+\title{Find the number of rows (lines) in a file.}
+\usage{
+  file.nrow(fn = "", dir = "", all.in.dir = FALSE)
+}
+\arguments{
+  \item{fn}{name of the file(s) to get the length of}
+
+  \item{dir}{optional path for fn location, or specify all
+  files in dir}
+
+  \item{all.in.dir}{select whether to extract length for
+  all files in dir}
+}
+\value{
+  returns length of file (or all files)
+}
+\description{
+  Returns the number of lines in a file, which in the case
+  of a datafile will often correspond to the number of
+  rows, or rows+1. Can also do this for all files in the
+  directory. File equivalent of nrow()
+}
+\examples{
+write.table(matrix(rnorm(100),nrow=10),"temp.txt",col.names=FALSE)
+file.nrow("temp.txt")
+# use with caution, will be slow if dir contains large files
+# not run # file.nrow(all.in.dir=TRUE)
+unlink("temp.txt")
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+\seealso{
+  \code{\link{file.ncol}}
+}
+

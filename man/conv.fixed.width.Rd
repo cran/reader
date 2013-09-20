@@ -1,0 +1,32 @@
+\name{conv.fixed.width}
+\alias{conv.fixed.width}
+\title{Convert a matrix or dataframe to fixed-width for nice file output}
+\usage{
+  conv.fixed.width(dat)
+}
+\arguments{
+  \item{dat}{data.frame or matrix}
+}
+\value{
+  returns dat with space padding as character
+}
+\description{
+  Pads each column to a common size so write.table()
+  produces a fixed width format that looks nice
+}
+\examples{
+df <- data.frame(ID=paste("ID",99:108,sep=""),
+  scores=sample(150,10,TRUE)+30,age=sample(16,10,TRUE))
+dff <- conv.fixed.width(df)
+write.table(df,file="notFW.txt",row.names=FALSE,col.names=FALSE,quote=FALSE)
+write.table(dff,file="isFW.txt",row.names=FALSE,col.names=FALSE,quote=FALSE)
+cat("Fixed-width:\\n",paste(readLines("isFW.txt"),"\\n"),sep="")
+cat("standard-format:\\n",paste(readLines("notFW.txt"),"\\n"),sep="")
+unlink(c("isFW.txt","notFW.txt"))
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk} #'
+
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

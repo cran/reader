@@ -1,0 +1,40 @@
+\name{find.id.col}
+\alias{find.id.col}
+\title{Find which column in a dataframe contains a specified set of values.}
+\usage{
+  find.id.col(frame, ids,
+    ret = c("col", "maxpc", "index", "result"))
+}
+\arguments{
+  \item{frame}{a data.frame, or similarly 2 dimensional
+  object which might contain ids}
+
+  \item{ids}{a vector of IDs/value that might be found in
+  at least 1 column of frame}
+
+  \item{ret}{specify what should be returned, see values}
+}
+\value{
+  ret can specify a list returning, 'col': the column
+  number (col=0 for rownames) with the best match; 'maxpc':
+  the percentage of ids found in the best matching column;
+  'index': the matching vector that maps the frame rows
+  onto ids; 'results': the (sub)set of ids found in frame.
+  NAs given for ids not found
+}
+\description{
+  Starting with a list of ids, each column is searched. The
+  column with the highest non-zero percentage matching is
+  assumed to correspond to the id list. The search
+  terminates early if a perfect match is found. Useful for
+  assembling annotation from multiple sources.
+}
+\examples{
+new.frame <- data.frame(day=c("M","T","W"),time=c(9,12,3),staff=c("Mary","Jane","John"))
+staff.ids <- c("Mark","Jane","John","Andrew","Sally","Mary")
+new.frame; staff.ids; find.id.col(new.frame,staff.ids)
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

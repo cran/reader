@@ -1,0 +1,49 @@
+\name{cat.path}
+\alias{cat.path}
+\title{Simple and robust way to create full-path file names.}
+\usage{
+  cat.path(dir = "", fn, pref = "", suf = "", ext = "",
+    must.exist = FALSE)
+}
+\arguments{
+  \item{dir}{directory for the full path, if 'fn' already
+  has a dir, then dir will be overridden. Auto add file
+  separator if not present}
+
+  \item{fn}{compulsory vector of file names/paths}
+
+  \item{pref}{prefix to add in front of the file name}
+
+  \item{suf}{suffix to add after the file name, before the
+  extension}
+
+  \item{ext}{file extension, will override an existing
+  extension}
+
+  \item{must.exist}{the specified file must already exist,
+  else error}
+}
+\value{
+  returns vector of file names with the full paths
+}
+\description{
+  Create a path with a file name, plus optional directory,
+  prefix, suffix, and file extension. dir/ext are robust,
+  so that if they already exist, the path produced will
+  still make sense. Prefix is applied after the directory,
+  and suffix before the file extension.
+}
+\examples{
+mydir <- "/Documents"
+cat.path(mydir,"temp.doc")
+# dir not added if one already present
+cat.path(mydir,"/Downloads/me/temp.doc")
+# using prefix and suffix
+cat.path(mydir,"temp.doc","NEW",suf=5)
+# changing the extension from .docx to .doc
+cat.path(mydir,"temp.docx",ext="doc")
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

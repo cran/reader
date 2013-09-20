@@ -1,0 +1,98 @@
+\name{reader}
+\alias{reader}
+\title{Flexibly load from a text or binary file, accepts multiple file formats.}
+\usage{
+  reader(fn, dir = "", want.type = NULL, def = "\t",
+    force.read = TRUE, header = NA, h.test.p = 0.05,
+    quiet = TRUE, treatas = NULL, override = FALSE,
+    more.types = NULL, auto.vec = TRUE, ...)
+}
+\arguments{
+  \item{fn}{filename (with or without path if dir is
+  specified)}
+
+  \item{dir}{optional directory if separate path/filename
+  is preferred}
+
+  \item{want.type}{if loading a binary file with multiple
+  objects, specify here the is() type of object you are
+  trying to load}
+
+  \item{def}{the default delimiter to try first}
+
+  \item{force.read}{attempt to read the file even if the
+  file type looks unsupported}
+
+  \item{header}{presence of a header should be
+  autodetected, but can specify header status if you don't
+  trust the autodetection}
+
+  \item{h.test.p}{p value to discriminate between number of
+  characters in a column name versus a column value
+  (sensitivity parameter for automatic header detection)}
+
+  \item{quiet}{run without messages and warnings}
+
+  \item{treatas}{a standard file extension, e.g, 'txt', to
+  treat file as}
+
+  \item{override}{assume first col is rownames, regardless
+  of heuristic}
+
+  \item{more.types}{optionally add more file types which
+  are read as text}
+
+  \item{auto.vec}{if the file seems to only have a single
+  column, automatically return the result as a vector
+  rather than a dataframe with 1 column}
+
+  \item{...}{further arguments to the function used by
+  'reader' to parse the file, e.g, depending on file.type,
+  can be read.table(), read.delim(), read.csv().}
+}
+\value{
+  returns the most appropriate object depending on the file
+  type, which is usually a data.frame except for binary
+  files
+}
+\description{
+  Uses file extension to distinguish between binary, csv or
+  other text formats. Then tries to automatically determine
+  other parameters necessary to read the file. Will attempt
+  to detect the delimiter, and detect whether there is a
+  heading/column names, and whether the first column should
+  be rownames, or left as a data column.
+}
+\examples{
+# create some datasets
+df <- data.frame(ID=paste("ID",101:110,sep=""),
+  scores=sample(70,10,TRUE)+30,age=sample(7,10,TRUE)+11)
+DNA <- apply(matrix(c("A","C","G","T")[sample(4,100,TRUE)],nrow=10),
+                                                1,paste,collapse="")
+fix.wid <- c("    MyVal    Results        Check",
+  "    0.234      42344          yes",
+  "    0.334        351          yes","    0.224         46           no",
+  "    0.214     445391          yes")
+# save data to various file formats
+test.files <- c("temp.txt","temp2.txt","temp3.csv",
+                              "temp4.rda","temp5.fasta","temp6.txt")
+write.table(df,file=test.files[1],col.names=FALSE,row.names=FALSE,sep="|",quote=TRUE)
+write.table(df,file=test.files[2],col.names=TRUE,row.names=TRUE,sep="\\t",quote=FALSE)
+write.csv(df,file=test.files[3])
+save(df,file=test.files[4])
+writeLines(DNA,con=test.files[5])
+writeLines(fix.wid,con=test.files[6])
+# use the same reader() function call to read in each file
+for(cc in 1:length(test.files)) {
+  cat(test.files[cc],"\\n")
+  myobj <- reader(test.files[cc])  # add 'quiet=FALSE' to see some working
+  print(myobj); cat("\\n\\n")
+}
+# inspect files before deleting if desired
+unlink(test.files)
+# myobj <- reader(file.choose()); myobj # run this to attempt opening a file
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

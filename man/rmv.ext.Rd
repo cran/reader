@@ -1,0 +1,44 @@
+\name{rmv.ext}
+\alias{rmv.ext}
+\title{Remove the file extension from a file-name.}
+\usage{
+  rmv.ext(fn = NULL, only.known = TRUE, more.known = NULL,
+    print.known = FALSE)
+}
+\arguments{
+  \item{fn}{filename(s) (with full path is ok too)}
+
+  \item{only.known}{logical, only remove extension if in
+  the 'known' list}
+
+  \item{more.known}{character vector, add to the list of
+  known extensions}
+
+  \item{print.known}{return the list of 'known' file
+  extensions}
+}
+\value{
+  returns the file name/path without the file extension
+}
+\description{
+  Default is to only remove from a known list of file
+  types, this is to protect files with '.' which may not
+  have an extension This option can be changed, and more
+  types can be specified too.
+}
+\examples{
+rmv.ext(print.known=TRUE)
+rmv.ext("/documents/nick/mydoc.xlsx")
+rmv.ext(c("temp.cnv","temp.txt","temp.epi"))
+# remove anything that looks like an extension
+rmv.ext(c("temp.cnv","temp.txt","temp.epi"),only.known=FALSE)
+# add to list of known extensions
+rmv.ext(c("temp.cnv","temp.txt","temp.epi"),more.known="epi")
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+\seealso{
+  \code{\link{get.ext}}
+}
+

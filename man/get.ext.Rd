@@ -1,0 +1,27 @@
+\name{get.ext}
+\alias{get.ext}
+\title{Get the file extension from a file-name.}
+\usage{
+  get.ext(fn)
+}
+\arguments{
+  \item{fn}{filename(s) (with full path is ok too)}
+}
+\value{
+  returns the (usually) 3 character file extension of a
+  filename
+}
+\description{
+  Get the file extension from a file-name.
+}
+\examples{
+get.ext("/documents/nick/mydoc.xlsx")
+get.ext(c("temp.cnv","temp.txt"))
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+\seealso{
+  \code{\link{rmv.ext}}
+}
+

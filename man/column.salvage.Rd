@@ -1,0 +1,43 @@
+\name{column.salvage}
+\alias{column.salvage}
+\title{Change column name in different form to desired form.}
+\usage{
+  column.salvage(frame, desired, testfor,
+    ignore.case = TRUE)
+}
+\arguments{
+  \item{frame}{a dataframe or matrix with column names}
+
+  \item{desired}{the column name wanted}
+
+  \item{testfor}{possible alternate forms of the desired
+  column name}
+
+  \item{ignore.case}{whether to ignore the upper/lower case
+  of the column names}
+}
+\value{
+  returns the original dataframe with the target column
+  renamed
+}
+\description{
+  Searches for possible equivalents for a desired column in
+  a dataframe and replaces first name match with desired
+  name. Useful when parsing different annotation files
+  which may have standard columns with slightly different
+  names, e.g, Gender=SEX=sex=M/F, or
+  ID=id=ids=samples=subjectID
+}
+\examples{
+df <- data.frame(Sex=c("M","F","F"),time=c(9,12,3),ID=c("ID3121","ID3122","ID2124"))
+# standard example
+new.df <- column.salvage(df,"sex",c("gender","sex","M/F")); df; new.df
+# exact column already present so no change
+new.df <- column.salvage(df,"ID",c("ID","id","ids","samples","subjectID")); df; new.df
+# ignore case==TRUE potentially results in not finding desired column:
+new.df <- column.salvage(df,"sex",c("gender","sex","M/F"),ignore.case=FALSE); df; new.df
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+

@@ -1,0 +1,50 @@
+\name{is.file}
+\alias{is.file}
+\title{Test whether a file exists in a target directory, or alternative
+list of directories.}
+\usage{
+  is.file(fn, dir = "", dirs = NULL, combine = TRUE)
+}
+\arguments{
+  \item{fn}{name of the file to search for}
+
+  \item{dir}{the first directory to look in (expected
+  location)}
+
+  \item{dirs}{vector/list, a set of directories to look in
+  should the file not be found in 'dir'.}
+
+  \item{combine}{if a list is given, test whether ALL files
+  valid}
+}
+\value{
+  logical vector of whether each file was found, or if
+  combine is true, then a single value whether ALL valid or
+  not.
+}
+\description{
+  Looks for a file named 'fn' in 'dir', and if not found
+  there, broadens the search to the list or vector of
+  directorys, 'dirs'. Returns TRUE or FALSE as to whether
+  the file exists.
+}
+\examples{
+l.fn <- "temp.txt"
+writeLines("test",con=l.fn)
+some.local.files <- narm(list.files()[1:10])
+print(some.local.files)
+is.file(l.fn)
+is.file(l.fn,dir=getwd())
+is.file(some.local.files)
+# add a non-valid file to the list to see what happens
+is.file(c(some.local.files,"fakefile.unreal"))
+is.file(c(some.local.files,"fakefile.unreal"),combine=FALSE)
+unlink(l.fn)
+}
+\author{
+  Nicholas Cooper \email{nick.cooper@cimr.cam.ac.uk}
+}
+\seealso{
+  \code{\link{find.file}}
+}
+
