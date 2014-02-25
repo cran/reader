@@ -3,8 +3,8 @@
 \title{Determine the delimiter for a text data file.}
 \usage{
   get.delim(fn, n = 10, comment = "#", skip = 0,
-    delims = c("\t", " ", "\t| +", ";", "|", ","),
-    large = 10, one.byte = TRUE)
+    delims = c("\t", " ", "\t| +", ";", ","), large = 10,
+    one.byte = TRUE)
 }
 \arguments{
   \item{fn}{name of the file to parse}

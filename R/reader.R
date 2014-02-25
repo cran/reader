@@ -1,4 +1,12 @@
-
+###NAMESPACE ADDITIONS###
+# Depends: R (>= 2.10), utils, NCmisc
+# Imports: grDevices, graphics, stats
+# Suggests:
+# importFrom(stats, rnorm)
+# importFrom(graphics, hist, plot)
+# importFrom(grDevices, colors) 
+# import(utils, NCmisc)
+###END NAMESPACE###
 
 #' Find which column in a dataframe contains a specified set of values.
 #' 
@@ -148,9 +156,9 @@ force.frame <- function(unknown.data,too.big=10^7)
           out.data <- as.matrix(unknown.data)
         } else {
           if(length(grep("big.matrix",uis))>0) {
-            if(!exists("getBigMat",mode="function")) { 
+            if(!exists("get.big.matrix",mode="function")) { 
               warning("'bigpc' package missing can't read big.matrix"); return(NULL) }
-            unknown.data <- do.call("getBigMat",list(bigMat=unknown.data)) # once bigpc  is submitted replace with actual fn
+            unknown.data <- do.call("get.big.matrix",list(bigMat=unknown.data)) # once bigpc  is submitted replace with actual fn
             if(estimate.memory(unknown.data) <= too.big) {
               cat(" converting big.matrix object into a dataframe\n")
               out.data <- as.matrix(unknown.data) 
@@ -161,7 +169,7 @@ force.frame <- function(unknown.data,too.big=10^7)
           } else {
             warning(paste("trying to convert object type",uis[1],"into a dataframe"),
                     " - result may be unpredictable")
-            out.data <- as.data.frame(unknown.data)
+            out.data <- as.df(unknown.data)
             #print(head(out.data))
             return(out.data)
           }
@@ -169,7 +177,7 @@ force.frame <- function(unknown.data,too.big=10^7)
       }
     }
   }
-  return(as.data.frame(out.data))
+  return(as.df(out.data))
 }
 
 
@@ -297,7 +305,7 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
   # and change name of the first detected misname in the 'testfor' list to 'desired'
   # e.g, want desired column 'GRP' and look for misnamings: 'group', 'Grp', 'grp', etc
   if(is.null(colnames(frame))) { warning("frame had no column names"); return(frame) }
-  if(!desired %in% colnames(frame)) {
+  if(!all(desired %in% colnames(frame))) {
     # ^ ie, if 'desired' already present, do nothing
     tf <- testfor; cf <- colnames(frame)
     if(ignore.case) { tf <- c(tolower(desired),tolower(tf)); cf <- tolower(cf) } 
@@ -322,6 +330,8 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
 #' necessary to read the file. Will attempt to detect the delimiter,
 #' and detect whether there is a heading/column names, and whether 
 #' the first column should be rownames, or left as a data column.
+#' Internal calls to standard file reading functions use 
+#' 'stringsAsFactors=FALSE'.
 #'
 #' @param fn filename (with or without path if dir is specified)
 #' @param dir optional directory if separate path/filename is preferred
@@ -426,7 +436,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
   if(typ==types[2])
   {
     # csv file
-    file.out <- read.csv(full.path, ...)
+    file.out <- read.csv(full.path,stringsAsFactors=FALSE,...)
     file.out <- shift.rownames(file.out,override,warn=!quiet)
   }
   if(typ==types[3])
@@ -434,10 +444,12 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
     # other text .txt file
     detect <- get.delim(full.path,n=50,comment="#",large=10,one.byte=FALSE) 
     if(length(detect)!=0) { def <- detect }
-    first.10 <- readLines(full.path,n=10)
+    first.10 <- readLines(full.path,n=10); hope10 <- length(first.10)
+    if(hope10<3) { lown <- hope10 } else { lown <- 3 }
+    if(hope10<2) { h2 <- lown <- 1 } else { h2 <- 2 }
     mini.parse <- strsplit(first.10,def)
     splitto <- sapply(mini.parse,length)
-    if(all(splitto[3:10]==splitto[2]) & (splitto[1]==(splitto[2]-1))) {
+    if(all(splitto[lown:hope10]==splitto[h2]) & (splitto[1]==(splitto[h2]-1))) {
       # was first row 1 delimiter shorter than all other rows? (i.e, header row)
       if(nchar(def)>1) {
         #read table only supports 1 byte delimiters (not regular expressions) 
@@ -457,12 +469,12 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
             return(split.by.ws)
           }
         }
-        file.out <- t(as.data.frame(split.by.ws))
+        file.out <- t(as.df(split.by.ws))
         ## END: SAME CHUNK AS BELOW FOR NON-HEADER VERSION ##
         if(all(file.out[,1]=="") & ncol(file.out)>1) { file.out <- file.out[,-1] }
         rownames(file.out) <- NULL
       } else {
-        file.out <- read.table(full.path, ..., sep=def,header=TRUE,row.names=1)
+        file.out <- read.table(full.path, ..., sep=def,header=TRUE,row.names=1,stringsAsFactors=FALSE)
       }
     } else {
       ## probably has a header too!
@@ -471,14 +483,21 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
         file.out <- readLines(full.path)
       } else {
         # some kind of delimited file
-        if (all(splitto[1]==splitto[2]))
+        if (all(splitto[1]==splitto[h2]))
         {
           # test whether there is a significant nchar difference between first and other rows
           # as a means of detecting whether the first row is a header row
           char.cnts <- sapply(mini.parse,nchar)
+          #prv(char.cnts,mini.parse);
+          lns <- sapply(char.cnts,length); 
+          if(!sum(abs(diff(lns)))==0) {
+            culprits <- lns!=Mode(lns)
+            warning("Line(s): ",paste(which(culprits),collapse=","),"; seemed to have a different number of columns than the majority, will attempt to read anyway")
+            mini.parse <- mini.parse[which(!culprits)]
+            char.cnts <- sapply(mini.parse,nchar)
+          }
           z.test <- function(X) { (X[1] - mean(X[-1],na.rm=TRUE))/max(1,sd(X[-1],na.rm=TRUE)) }
-          #print(as.data.frame(char.cnts));
-          Zs <- abs(apply(as.data.frame(char.cnts),1,z.test))
+          Zs <- abs(apply(as.df(char.cnts),1,z.test))
           if(length(Zs)>0) {
             #print(mini.parse); print(char.cnts); print(Zs)
             critZ <- abs(qnorm((h.test.p*(min(round(sqrt(length(Zs))),9)))/2))
@@ -504,7 +523,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
                   return(split.by.ws)
                 }
               }
-              file.out <- t(as.data.frame(split.by.ws))
+              file.out <- t(as.df(split.by.ws))
               ## END: SAME CHUNK AS ABOVE FOR NON-HEADER VERSION ##
               if(all(file.out[,1]=="") & ncol(file.out)>1) { file.out <- file.out[,-1] }
               if(nrow(file.out)>1 & hdr) {
@@ -513,7 +532,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
               }
               rownames(file.out) <- NULL
             } else {
-              file.out <- read.delim(full.path, ..., sep=def,header=hdr)
+              file.out <- read.delim(full.path, ..., sep=def,header=hdr,stringsAsFactors=FALSE)
               file.out <- shift.rownames(file.out,override,warn=!quiet)
             }
           } else {
@@ -617,7 +636,7 @@ shift.rownames <- function(dataf,override=FALSE,warn=FALSE)
     if(nrow(dataf)<1) { return(dataf) } # had no rows, so can't convert it to rownames
     typz <- sapply(sapply(dataf,is),"[[",1)
     rn <- paste(dataf[,1])
-    dataout <- as.data.frame(dataf[,-1])
+    dataout <- as.df(dataf[,-1])
     if (typz[1]=="character" & all(typz[-1] %in% c("numeric","integer")))
     {
       numerify <- TRUE
@@ -638,7 +657,7 @@ shift.rownames <- function(dataf,override=FALSE,warn=FALSE)
       }
     }    
     if(numerify) { for (dd in ncol(dataout))
-    { dataout[,dd] <- as.numeric(as.character(dataout[,dd])) }
+    { suppressWarnings(dataout[,dd] <- as.numeric(as.character(dataout[,dd]))) }
     } 
     if(anyDuplicated(rn)) { if(warn) { warning("rownames not unique, so leaving as NULL") }; return (dataf) }
     rownames(dataout) <- rn
@@ -657,12 +676,12 @@ shift.rownames <- function(dataf,override=FALSE,warn=FALSE)
               return(dataf)
             } else {
               rn <- dataf[,1]
-              if(ncol(dataf)<3) { dataout <- as.data.frame(dataf[,-1]) } else {
+              if(ncol(dataf)<3) { dataout <- as.df(dataf[,-1]) } else {
                 dataout <- dataf[,-1] }
               if(anyDuplicated(rn)) { if(warn) { warning("rownames not unique, so leaving as NULL") }; return (dataf) }
               rownames(dataout) <- paste(rn)
               if(sup>=10) { for (dd in ncol(dataout))
-              { dataout[,dd] <- as.numeric(as.character(dataout[,dd])) }
+              { suppressWarnings(dataout[,dd] <- as.numeric(as.character(dataout[,dd]))) }
               }    
               return(dataout)
             }            
@@ -768,7 +787,7 @@ rmv.ext <- function(fn=NULL,only.known=TRUE,more.known=NULL,print.known=FALSE) {
   # remove file extension from a filename character string
   known.ext <- c("TXT","RDATA","TAB","DAT","CSV","VCF","GCM","BIM","MAP","FAM",
                  "PFB","SH","R","CPP","H","DOC","DOCX","XLS","XLSX","PDF","JPG",
-                 "BMP","PNG","TAR","GZ","CNV","PL","PY","ZIP","ORG",
+                 "BMP","PNG","TAR","GZ","CNV","PL","PY","ZIP","ORG","RDA","DSC","BCK",
                  "ABW","HTM","HTML",toupper(more.known))
   if(is.null(fn)) { 
     if(print.known) {
@@ -811,6 +830,20 @@ is.ch <- function(x) {
   return(as.logical(pt1 | pt2))
 }
 
+#' Internal function 
+as.df <- function(...) {
+  ## unless 'stringsAsFactors' is called explicitly, wrap
+  # as.data.frame so that stringsAsFactors is always FALSE
+  test <- list(...)
+  if(length(names(test))<1) { doit <- FALSE } else {
+    if(names(test) %in% "stringsAsFactors") { doit <- TRUE } else { doit <- FALSE }
+  }
+  if(doit) {
+    return(as.data.frame(...))
+  } else {
+    return(as.data.frame(...,stringsAsFactors=FALSE))
+  }
+}
 
 #' Simple and robust way to create full-path file names.
 #' 
@@ -888,8 +921,11 @@ dir.force.slash <- function(dir) {
 #'  initiate this call within the function
 #' @param coms list of valid commands to look for, not case sensitive
 #' @param def list of default values for each parameter (in same order)
-#' @param verbose whether to print to the console which assignments are made and warning messages
-#' @return returns dataframe showing the resulting values for each 'coms'
+#' @param verbose logical, whether to print to the console which assignments are made and warning messages
+#' @param list.out logical, whether to return output as a list or data.frame 
+#' @return returns dataframe showing the resulting values [column 1, "value"] for each 'coms' (rownames); or, if
+#'  list.out=TRUE, then returns a list with names corresponding to 'coms' and values equivalent to 'value' column of 
+#'  the data.frame that would be returned if list.out=FALSE
 #' @export 
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @examples
@@ -902,12 +938,13 @@ dir.force.slash <- function(dir) {
 #' # run above command in the terminal, or using 'system' below:
 #' # not run # arg <- system(bash.cmd)
 #' # not run # unlink(temp.fn) # delete temporary file
-parse.args <- function(arg.list=NULL,coms=c("X"),def=0, verbose=TRUE)
+parse.args <- function(arg.list=NULL,coms=c("X"),def=0, list.out=F, verbose=TRUE)
 {
   # parse arguments entered running R from the command line
   # using NAME=VALUE
   if(is.null(arg.list)) { arg.list <- commandArgs() }
   if(length(coms)>1 & length(def)==1) { def <- rep(def,length(coms)) }
+  coms.original.case <- coms
   coms <- toupper(coms)
   outframe <- data.frame(value=paste(def),stringsAsFactors=FALSE)
   rownames(outframe) <- coms
@@ -940,6 +977,10 @@ parse.args <- function(arg.list=NULL,coms=c("X"),def=0, verbose=TRUE)
   } else {
     outframe <- NULL
   } 
+  rownames(outframe) <- coms.original.case
+  if(list.out) {
+    outframe <- as.list(as.data.frame(t(outframe),stringsAsFactors=FALSE))
+  }
   return (outframe)
 }
 
@@ -1037,7 +1078,8 @@ file.ncol <- function(fn,reader=FALSE,del=NULL,comment="#",skip=0,force=FALSE,ex
     ncols <- ncol(fl); rm(fl)
   } else {
     if(is.null(del)) {
-      del <- get.delim(fn,n=6,comment=comment,skip=skip)
+      # suppress in case it's a vector file, e.g, ncol will be 1
+      del <- suppressWarnings(get.delim(fn,n=6,comment=comment,skip=skip))
     }
     test.bit <- n.readLines(fn=fn,n=5,comment=comment,skip=skip)
     lens <- sapply(strsplit(test.bit,del),length)
@@ -1128,7 +1170,7 @@ n.readLines <- function(fn,n,comment="#",skip=0,header=TRUE)
 #'   print(get.delim(test.files[cc])) }
 #' unlink(test.files)
 get.delim <- function(fn,n=10,comment="#",skip=0,
-                        delims=c("\t"," ","\t| +",";","|",","),large=10,one.byte=TRUE)  
+                        delims=c("\t"," ","\t| +",";",","),large=10,one.byte=TRUE)  
 {
   # test top 'n' lines to determine what delimeter the file uses
   if(!file.exists(fn)) { stop(paste("cannot derive delimiter as file",fn,"was not found"))}
@@ -1137,7 +1179,11 @@ get.delim <- function(fn,n=10,comment="#",skip=0,
   num.del <- list()
   if(any(nchar(delims)>1) & one.byte) { delims <- delims[-which(nchar(delims)>1)] }
   for (cc in 1:length(delims)) {
-    num.del[[cc]] <- sapply(strsplit(test.bit,delims[[cc]]),length)
+    num.del[[cc]] <- sapply(strsplit(test.bit,delims[[cc]],fixed=T),length)
+  }
+  if(all(unlist(num.del)==1)) { 
+    warning("not a delimited file, probably a vector file")
+    return(NA)
   }
   # are there some delimiters that produce consistent ncol between rows?
   need.0 <- sapply(num.del,function(X) { sum(diff(X)) })

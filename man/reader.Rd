@@ -61,7 +61,9 @@
   other parameters necessary to read the file. Will attempt
   to detect the delimiter, and detect whether there is a
   heading/column names, and whether the first column should
-  be rownames, or left as a data column.
+  be rownames, or left as a data column. Internal calls to
+  standard file reading functions use
+  'stringsAsFactors=FALSE'.
 }
 \examples{
 # create some datasets

@@ -6,19 +6,21 @@
 Functions to simplify reading from common file types
 }
 \description{
-A set of functions to simplify reading data from files. The main function, reader(), should read most common R datafile types without needing any parameters except the filename. Other functions provide simple ways of handling file paths and extensions, and automatically detecting file format and structure.
+A set of functions to simplify reading data from files. The main function, reader(), should read most common R datafile 
+ types without needing any parameters except the filename. Other functions provide simple ways of handling file paths and 
+ extensions, and automatically detecting file format and structure.
 }
 \details{
 \tabular{ll}{
 Package: \tab reader\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
-Date: \tab 2013-07-25\cr
+Date: \tab 2014-02-25\cr
 License: \tab GPL (>= 2)\cr
 }
- The reader() function, for which the package is named,
- should be able to read most of the common types of datafiles used by R
- users, without needing any arguments other than the filename. 
+The reader() function, for which the package is named,
+ should be able to read most of the common types of datafiles used in R
+ without needing any arguments other than the filename. 
  The structure, header, file-format and delimiter are determined automatically. 
  Usually no extra parameters are needed. Other functions provide similarly flexibility
  to run contigent on data type and file format, or can look for an input file in

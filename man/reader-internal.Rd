@@ -5,6 +5,7 @@
 \alias{assess.dat.type}
 \alias{is.ch}
 \alias{dir.force.slash}
+\alias{as.df}
 
 \title{Internal reader Functions}
 \description{

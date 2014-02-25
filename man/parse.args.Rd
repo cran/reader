@@ -3,7 +3,7 @@
 \title{Function to collect arguments when running R from the command line}
 \usage{
   parse.args(arg.list = NULL, coms = c("X"), def = 0,
-    verbose = TRUE)
+    list.out = F, verbose = TRUE)
 }
 \arguments{
   \item{arg.list}{the result of a commandArgs() call, or
@@ -15,12 +15,19 @@
   \item{def}{list of default values for each parameter (in
   same order)}
 
-  \item{verbose}{whether to print to the console which
-  assignments are made and warning messages}
+  \item{verbose}{logical, whether to print to the console
+  which assignments are made and warning messages}
+
+  \item{list.out}{logical, whether to return output as a
+  list or data.frame}
 }
 \value{
-  returns dataframe showing the resulting values for each
-  'coms'
+  returns dataframe showing the resulting values [column 1,
+  "value"] for each 'coms' (rownames); or, if
+  list.out=TRUE, then returns a list with names
+  corresponding to 'coms' and values equivalent to 'value'
+  column of the data.frame that would be returned if
+  list.out=FALSE
 }
 \description{
   Allows parameter specification by A=..., B=... in the
