@@ -14,8 +14,8 @@ A set of functions to simplify reading data from files. The main function, reade
 \tabular{ll}{
 Package: \tab reader\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2014-02-25\cr
+Version: \tab 1.0.4\cr
+Date: \tab 2014-09-01\cr
 License: \tab GPL (>= 2)\cr
 }
 The reader() function, for which the package is named,

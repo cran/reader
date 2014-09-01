@@ -349,6 +349,9 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
 #' @param more.types optionally add more file types which are read as text
 #' @param auto.vec if the file seems to only have a single column, automatically
 #'  return the result as a vector rather than a dataframe with 1 column
+#' @param one.byte logical parameter, passed to 'get.delim', whether to look for only 1-byte
+#'  delimiters, to also search for 'whitespace' which is a multibyte (wildcard) delimiter type. 
+#'  Use one.byte = FALSE, to read fixed width files, e.g, many plink files.
 #' @param ... further arguments to the function used by 'reader' to parse the file,
 #'  e.g, depending on file.type, can be read.table(), read.delim(), read.csv().
 #' @return returns the most appropriate object depending on the file type,
@@ -384,7 +387,8 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
 #' unlink(test.files) 
 #' # myobj <- reader(file.choose()); myobj # run this to attempt opening a file
 reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h.test.p=0.05,
-                   quiet=TRUE,treatas=NULL,override=FALSE,more.types=NULL,auto.vec=TRUE,...)
+                   quiet=TRUE,treatas=NULL,override=FALSE,more.types=NULL,
+                   auto.vec=TRUE,one.byte=TRUE,...)
 {
   # try to read in data from many types of datafile
   typ <- classify.ext(fn,more.txt=more.types)
@@ -442,7 +446,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
   if(typ==types[3])
   {
     # other text .txt file
-    detect <- get.delim(full.path,n=50,comment="#",large=10,one.byte=FALSE) 
+    detect <- suppressWarnings(get.delim(full.path,n=50,comment="#",large=10,one.byte=one.byte))
     if(length(detect)!=0) { def <- detect }
     first.10 <- readLines(full.path,n=10); hope10 <- length(first.10)
     if(hope10<3) { lown <- hope10 } else { lown <- 3 }
@@ -785,6 +789,7 @@ get.ext <- function(fn) {
 #' rmv.ext(c("temp.cnv","temp.txt","temp.epi"),more.known="epi") 
 rmv.ext <- function(fn=NULL,only.known=TRUE,more.known=NULL,print.known=FALSE) {
   # remove file extension from a filename character string
+  #if updating this function, also update internal copy in NCmisc
   known.ext <- c("TXT","RDATA","TAB","DAT","CSV","VCF","GCM","BIM","MAP","FAM",
                  "PFB","SH","R","CPP","H","DOC","DOCX","XLS","XLSX","PDF","JPG",
                  "BMP","PNG","TAR","GZ","CNV","PL","PY","ZIP","ORG","RDA","DSC","BCK",
@@ -873,6 +878,7 @@ as.df <- function(...) {
 #' cat.path(mydir,"temp.docx",ext="doc")
 cat.path <- function(dir="",fn,pref="",suf="",ext="",must.exist=FALSE) 
 {
+  #if updating this function, also update internal copy in NCmisc
   dir.ch <- .Platform$file.sep
   if(is.list(fn) & is.ch(fn)) { fn <- unlist(fn) } #; 
   if(length(dir)>1) { dir <- dir[1]; cat("only first dir was used\n") }
@@ -1170,7 +1176,7 @@ n.readLines <- function(fn,n,comment="#",skip=0,header=TRUE)
 #'   print(get.delim(test.files[cc])) }
 #' unlink(test.files)
 get.delim <- function(fn,n=10,comment="#",skip=0,
-                        delims=c("\t"," ","\t| +",";",","),large=10,one.byte=TRUE)  
+                        delims=c("\t","\t| +"," ",";",","),large=10,one.byte=TRUE)  
 {
   # test top 'n' lines to determine what delimeter the file uses
   if(!file.exists(fn)) { stop(paste("cannot derive delimiter as file",fn,"was not found"))}
@@ -1179,8 +1185,10 @@ get.delim <- function(fn,n=10,comment="#",skip=0,
   num.del <- list()
   if(any(nchar(delims)>1) & one.byte) { delims <- delims[-which(nchar(delims)>1)] }
   for (cc in 1:length(delims)) {
-    num.del[[cc]] <- sapply(strsplit(test.bit,delims[[cc]],fixed=T),length)
+    fff <- nchar(delims[[cc]])==1
+    num.del[[cc]] <- sapply(strsplit(test.bit,delims[[cc]],fixed=fff),length)
   }
+  #prv(num.del)
   if(all(unlist(num.del)==1)) { 
     warning("not a delimited file, probably a vector file")
     return(NA)
