@@ -102,6 +102,7 @@ find.id.col <- function(frame,ids,ret=c("col","maxpc","index","result"))
 #' @seealso \code{\link{force.vec}}
 #' @examples
 #' # create a matrix, binary file, text file, big.matrix.descriptor
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' test.files <- c("temp.rda","temp.txt")
 #' mymat <- matrix(rnorm(100),nrow=10)
 #' # not run yet # require(bigmemory)
@@ -119,6 +120,7 @@ find.id.col <- function(frame,ids,ret=c("col","maxpc","index","result"))
 #'       "; is() => ",is(the.frame)[1],"\n",sep="")
 #' }
 #' unlink(test.files)
+#' setwd(orig.dir) # reset working dir to original
 force.frame <- function(unknown.data,too.big=10^7)
 {
   # returns a dataframe if 'unknown.data' can in anyway relate to such:
@@ -359,6 +361,7 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
 #' @export 
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' # create some datasets
 #' df <- data.frame(ID=paste("ID",101:110,sep=""),
 #'   scores=sample(70,10,TRUE)+30,age=sample(7,10,TRUE)+11)
@@ -386,6 +389,7 @@ column.salvage <- function(frame,desired,testfor, ignore.case=TRUE)
 #' # inspect files before deleting if desired
 #' unlink(test.files) 
 #' # myobj <- reader(file.choose()); myobj # run this to attempt opening a file
+#' setwd(orig.dir) # reset working directory to original
 reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h.test.p=0.05,
                    quiet=TRUE,treatas=NULL,override=FALSE,more.types=NULL,
                    auto.vec=TRUE,one.byte=TRUE,...)
@@ -452,6 +456,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
     if(hope10<3) { lown <- hope10 } else { lown <- 3 }
     if(hope10<2) { h2 <- lown <- 1 } else { h2 <- 2 }
     mini.parse <- strsplit(first.10,def)
+    if(length(mini.parse)==0) { return(character(0)) }  # empty file
     splitto <- sapply(mini.parse,length)
     if(all(splitto[lown:hope10]==splitto[h2]) & (splitto[1]==(splitto[h2]-1))) {
       # was first row 1 delimiter shorter than all other rows? (i.e, header row)
@@ -502,11 +507,15 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
           }
           z.test <- function(X) { (X[1] - mean(X[-1],na.rm=TRUE))/max(1,sd(X[-1],na.rm=TRUE)) }
           Zs <- abs(apply(as.df(char.cnts),1,z.test))
-          if(length(Zs)>0) {
+          if(length(Zs)>0 & hope10>2) {
             #print(mini.parse); print(char.cnts); print(Zs)
             critZ <- abs(qnorm((h.test.p*(min(round(sqrt(length(Zs))),9)))/2))
             #cat("Zs mean",mean(Zs,na.rm=TRUE),"critZ",critZ,"\n")
-            if(mean(Zs,na.rm=TRUE)<critZ) { hdr <- FALSE } else { hdr <- TRUE }
+            mZ <- mean(Zs,na.rm=TRUE)
+           # prv(mZ,critZ,Zs,z.test,splitto,h.test.p,char.cnts,hope10)
+            if(length(mZ)>0) {
+             if(mZ<critZ) { hdr <- FALSE } else { hdr <- TRUE }
+            } else { hdr <- TRUE }
             if(!is.na(header)) { if(is.logical(header)) { hdr <- header }}
             if(nchar(def)>1) {
               #read table only supports 1 byte delimiters (not regular expressions) 
@@ -540,7 +549,7 @@ reader <- function(fn,dir="",want.type=NULL,def="\t",force.read=TRUE,header=NA,h
               file.out <- shift.rownames(file.out,override,warn=!quiet)
             }
           } else {
-            warning("error of unknown cause in reader function, using readLines")
+            warning("file too small to determine structure, or other error in reader function, reverting to readLines")
             file.out <- readLines(full.path)
           }
         } else {
@@ -1005,11 +1014,13 @@ parse.args <- function(arg.list=NULL,coms=c("X"),def=0, list.out=F, verbose=TRUE
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @seealso \code{\link{file.ncol}}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' write.table(matrix(rnorm(100),nrow=10),"temp.txt",col.names=FALSE)
 #' file.nrow("temp.txt")
 #' # use with caution, will be slow if dir contains large files
 #' # not run # file.nrow(all.in.dir=TRUE) 
 #' unlink("temp.txt")
+#' setwd(orig.dir) # reset working directory to original
 file.nrow <- function(fn="",dir="",all.in.dir=FALSE) {
   zip <- FALSE
   if(all(fn=="")) { 
@@ -1018,7 +1029,7 @@ file.nrow <- function(fn="",dir="",all.in.dir=FALSE) {
     if(length(fn)>1) { warning("only first file used, to do multiple use all.in.dir") }
     if(!is.file(fn[1],dir)) { stop("Error: file did not exist") }
   }
-  if(!check.linux.install("wc")) { warning("linux command 'wc' not available"); return(NULL) }
+  if(!check.linux.install("wc")) { return(suppressWarnings(wc.windows(fn))) }
   if(tolower(get.ext(fn))!="gz") { cmd <- paste("wc -l ",fn,sep="") } else {
     if(!all.in.dir) { cmd <- paste("zcat ",fn[1]," | wc -l ",sep="") ; zip <- TRUE } }
   linez <- system(cmd,intern=TRUE)
@@ -1031,6 +1042,20 @@ file.nrow <- function(fn="",dir="",all.in.dir=FALSE) {
   if(zip & all(is.na(nms))) { nms <- (fn[1]) }
   names(lens) <- nms
   return(lens)
+}
+
+
+# internal alternative for wc -l for windows
+wc.windows <- function(fn) {
+  dat.file <- file(fn)
+  open(con=dat.file,open="r")
+  eof <- FALSE; cc <- 0
+  while(!eof) {
+    eof <- length(readLines(dat.file,n=1))==0
+    cc <- cc + 1
+  }
+  close(con=dat.file)
+  return(cc-1)
 }
 
 
@@ -1052,6 +1077,7 @@ file.nrow <- function(fn="",dir="",all.in.dir=FALSE) {
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @seealso \code{\link{file.nrow}}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' write.table(matrix(rnorm(100),nrow=10),"temp.txt",col.names=FALSE,row.names=FALSE)
 #' file.ncol("temp.txt",excl.rn=TRUE)
 #' unlink("temp.txt")
@@ -1060,6 +1086,7 @@ file.nrow <- function(fn="",dir="",all.in.dir=FALSE) {
 #' # not run # lf <- list.files(); if(length(lf)==0) { print("no files in dir") }
 #' # lf <- lf[classify.ext(lf)=="TXT"]
 #' # not run (only works if length(lf)>0) # file.ncol(lf) 
+#' setwd(orig.dir) # reset working directory to original
 file.ncol <- function(fn,reader=FALSE,del=NULL,comment="#",skip=0,force=FALSE,excl.rn=FALSE) {
   ## ncol function but for a file
   use.reader <- get("reader",mode="logical")
@@ -1116,11 +1143,13 @@ file.ncol <- function(fn,reader=FALSE,del=NULL,comment="#",skip=0,force=FALSE,ex
 #' @export 
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' dat <- matrix(sample(100),nrow=10)
 #' write.table(dat,"temp.txt",col.names=FALSE,row.names=FALSE)
 #' n.readLines("temp.txt",n=2,skip=2,header=FALSE)
 #' dat[3:4,]
 #' unlink("temp.txt")
+#' setwd(orig.dir) # reset working directory to original
 n.readLines <- function(fn,n,comment="#",skip=0,header=TRUE)
 {
   # read at least 'n' lines of a file, skipping lines and ignoring any starting with comment
@@ -1163,6 +1192,7 @@ n.readLines <- function(fn,n,comment="#",skip=0,header=TRUE)
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @seealso \code{\link{reader}}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' df <- data.frame(ID=paste("ID",101:110,sep=""),
 #'   scores=sample(70,10,TRUE)+30,age=sample(7,10,TRUE)+11)
 #' # save data to various file formats
@@ -1175,6 +1205,7 @@ n.readLines <- function(fn,n,comment="#",skip=0,header=TRUE)
 #'   cat("\n",test.files[cc],": ")
 #'   print(get.delim(test.files[cc])) }
 #' unlink(test.files)
+#' setwd(orig.dir) # reset working dir to original
 get.delim <- function(fn,n=10,comment="#",skip=0,
                         delims=c("\t","\t| +"," ",";",","),large=10,one.byte=TRUE)  
 {
@@ -1240,6 +1271,7 @@ get.delim <- function(fn,n=10,comment="#",skip=0,
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @seealso \code{\link{is.file}}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' l.fn <- "temp.txt"
 #' writeLines("test",con=l.fn)
 #' find.file(l.fn)
@@ -1253,6 +1285,7 @@ get.delim <- function(fn,n=10,comment="#",skip=0,
 #' # a file named 'temp.txt'
 #' # not run # find.file(l.fn,dir=getwd(),dirs=common.places)
 #' # unlink(d.fn) # run only if test file produced
+#' setwd(orig.dir) # reset working dir to original
 find.file <- function(fn,dir="",dirs=NULL) { 
   if(!is.ch(fn)) { return("") }
   for (cc in 1:length(fn)) {
@@ -1285,6 +1318,7 @@ find.file <- function(fn,dir="",dirs=NULL) {
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk}
 #' @seealso \code{\link{find.file}}
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' l.fn <- "temp.txt"
 #' writeLines("test",con=l.fn)
 #' some.local.files <- narm(list.files()[1:10])
@@ -1296,6 +1330,7 @@ find.file <- function(fn,dir="",dirs=NULL) {
 #' is.file(c(some.local.files,"fakefile.unreal"))
 #' is.file(c(some.local.files,"fakefile.unreal"),combine=FALSE)
 #' unlink(l.fn)
+#' setwd(orig.dir) # reset working dir to original
 is.file <- function(fn,dir="",dirs=NULL,combine=TRUE) {
   # if the path or raw filename 'fn' can refer to a file in dir/dirs
   # return TRUE, else FALSE
@@ -1371,6 +1406,7 @@ add.dir.if.not <- function(locs,dir="",dirs="",blank.if.not=TRUE,warn=FALSE) {
 #' @export 
 #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk} #' @author Nicholas Cooper \email{nick.cooper@@cimr.cam.ac.uk} 
 #' @examples
+#' orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
 #' df <- data.frame(ID=paste("ID",99:108,sep=""),
 #'   scores=sample(150,10,TRUE)+30,age=sample(16,10,TRUE))
 #' dff <- conv.fixed.width(df)
@@ -1379,6 +1415,7 @@ add.dir.if.not <- function(locs,dir="",dirs="",blank.if.not=TRUE,warn=FALSE) {
 #' cat("Fixed-width:\n",paste(readLines("isFW.txt"),"\n"),sep="")
 #' cat("standard-format:\n",paste(readLines("notFW.txt"),"\n"),sep="")
 #' unlink(c("isFW.txt","notFW.txt"))
+#' setwd(orig.dir) # reset working dir to original
 conv.fixed.width <- function(dat) {
   # for a dataframe convert to fixed width format prior to writing to file
   padw <- function(X,L) { paste(spc(L-nchar(paste(X))),X,sep="") }

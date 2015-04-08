@@ -4,6 +4,7 @@
 \alias{vec.extract.mat}
 \alias{assess.dat.type}
 \alias{is.ch}
+\alias{wc.windows}
 \alias{dir.force.slash}
 \alias{as.df}
 
