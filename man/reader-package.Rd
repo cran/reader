@@ -14,8 +14,8 @@ A set of functions to simplify reading data from files. The main function, reade
 \tabular{ll}{
 Package: \tab reader\cr
 Type: \tab Package\cr
-Version: \tab 1.0.5\cr
-Date: \tab 2015-04-08\cr
+Version: \tab 1.0.6\cr
+Date: \tab 2016-12-29\cr
 License: \tab GPL (>= 2)\cr
 }
 The reader() function, for which the package is named,
@@ -59,7 +59,7 @@ List of key functions:
 Nicholas Cooper
 
 Maintainer: 
-Nicholas Cooper <nick.cooper@cimr.cam.ac.uk>
+Nicholas Cooper <njcooper@gmx.co.uk>
 }
 \keyword{ IO }
 \keyword{ manip }
